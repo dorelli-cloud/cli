@@ -1,0 +1,27 @@
+{
+  "name": "dorelli",
+  "version": "0.1.0",
+  "description": "Zet je statische website online op Dorelli Hosting — vanuit je terminal of vanuit een AI-tool zoals Claude Code, Codex of Cursor.",
+  "keywords": ["hosting", "deploy", "static-site", "mcp", "claude", "nederland"],
+  "homepage": "https://dorelli.cloud/deployen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elsaviour/dorelli-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/elsaviour/dorelli-cli/issues"
+  },
+  "author": "Uitgeverij Doreleijers",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "dorelli": "bin/dorelli.js"
+  },
+  "files": ["bin", "src", "skill", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
+  }
+}

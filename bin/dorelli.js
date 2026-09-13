@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLI voor Dorelli Hosting.
+// CLI voor Dorelli Cloud.
 //
 // Bedoeld om óók door een AI-tool gedraaid te worden: Claude Code, Codex en
 // Cursor hebben allemaal een shell en volgen "run npx dorelli deploy" zonder
@@ -31,6 +31,10 @@ Opties bij deploy:
 
 De eerste publicatie schrijft ${CONFIG_BESTAND} met je site-id en token.
 Bewaar dat bestand, maar zet het niet in versiebeheer.
+
+Een app met database (Node/Next)? Die wordt op GitHub gebouwd, niet hier:
+zet de GitHub Action dorelli-deploy met plan: app in je repository.
+Zie https://dorelli.cloud/deployen en https://dorelli.cloud/prijzen.
 `;
 
 function argsParsen(argv) {
@@ -94,7 +98,7 @@ async function deploy(argv) {
     if (e.code === "blocked") {
       console.error("De inhoud is door de moderatie tegengehouden.");
     } else if (e.code === "bad_type") {
-      console.error("Tip: wij hosten alleen statische sites. Bouw je project eerst (npm run build).");
+      console.error("Tip: de CLI publiceert statische sites. Bouw je project eerst (npm run build), of gebruik voor een Node-app de GitHub Action met plan: app.");
     } else if (e.code === "rate_limited") {
       console.error("Tip: wacht even; er geldt een limiet op nieuwe sites per uur.");
     }
@@ -116,7 +120,7 @@ async function status(argv) {
       siteId: config.site_id,
       token: config.deploy_token,
     });
-    console.log(`${r.url}\nstatus: ${r.status}\nverloopt: ${r.expires_at}\nbestanden: ${r.files}`);
+    console.log(`${r.url}\nplan: ${r.plan ?? "website"}\nstatus: ${r.status}\nverloopt: ${r.expires_at}\n${r.plan === "app" ? `image: ${r.image ?? "-"}` : `bestanden: ${r.files}`}`);
   } catch (e) {
     console.error(`Status ophalen mislukt: ${e.message}`);
     process.exit(1);

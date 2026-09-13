@@ -1,4 +1,4 @@
-// MCP-server (stdio) voor Dorelli Hosting.
+// MCP-server (stdio) voor Dorelli Cloud.
 //
 // Bewust zonder SDK: het stdio-protocol is regel-gescheiden JSON-RPC, en dat is
 // een handvol regels. Zo blijft het pakket op één afhankelijkheid (fflate) en
@@ -15,7 +15,7 @@ const TOOLS = [
   {
     name: "deploy_site",
     description:
-      "Publiceer een map met een statische website op Dorelli Hosting. De site komt binnen een minuut online op <naam>.dorelli.cloud. Bij de eerste publicatie is een e-mailadres nodig; daarna onthoudt .dorelli.json de site en publiceert dit dezelfde site opnieuw.",
+      "Publiceer een map met een statische website op Dorelli Cloud. De site komt binnen een minuut online op <naam>.dorelli.cloud. Bij de eerste publicatie is een e-mailadres nodig; daarna onthoudt .dorelli.json de site en publiceert dit dezelfde site opnieuw.",
     inputSchema: {
       type: "object",
       properties: {

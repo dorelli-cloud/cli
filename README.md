@@ -1,6 +1,6 @@
 # dorelli
 
-Zet je statische website online op [Dorelli Hosting](https://dorelli.cloud) —
+Zet je statische website online op [Dorelli Cloud](https://dorelli.cloud) —
 vanuit je terminal of rechtstreeks vanuit een AI-tool.
 
 Gebouwd met Lovable, v0, Claude of Cursor? Eén commando en je site staat live

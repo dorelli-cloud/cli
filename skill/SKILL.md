@@ -1,9 +1,9 @@
 ---
 name: dorelli-deploy
-description: Zet een statische website online op Dorelli Hosting (dorelli.cloud) — een AI-gebouwde site publiceren op een subdomein, opnieuw publiceren na wijzigingen, en de status opvragen. Gebruik dit als iemand vraagt zijn site live te zetten, te hosten, te deployen of online te krijgen, of vraagt om een URL om zijn site te laten zien.
+description: Zet een statische website online op Dorelli Cloud (dorelli.cloud) — een AI-gebouwde site publiceren op een subdomein, opnieuw publiceren na wijzigingen, en de status opvragen. Gebruik dit als iemand vraagt zijn site live te zetten, te hosten, te deployen of online te krijgen, of vraagt om een URL om zijn site te laten zien.
 ---
 
-# Site publiceren op Dorelli Hosting
+# Site publiceren op Dorelli Cloud
 
 Publiceert een statische site op `<naam>.dorelli.cloud`. Geen account nodig,
 binnen een minuut online. Bedoeld voor sites die met een AI-tool zijn gebouwd.

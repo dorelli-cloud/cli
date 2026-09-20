@@ -6,10 +6,10 @@
   "homepage": "https://dorelli.cloud/deployen",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elsaviour/dorelli-cli.git"
+    "url": "git+https://github.com/dorelli-cloud/cli.git"
   },
   "bugs": {
-    "url": "https://github.com/elsaviour/dorelli-cli/issues"
+    "url": "https://github.com/dorelli-cloud/cli/issues"
   },
   "author": "Uitgeverij Doreleijers",
   "license": "MIT",

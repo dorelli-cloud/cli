@@ -7,7 +7,7 @@ Gebouwd met Lovable, v0, Claude of Cursor? Eén commando en je site staat live
 op `jouw-naam.dorelli.cloud`. Geen account nodig.
 
 ```bash
-npx github:elsaviour/dorelli-cli deploy --email jij@voorbeeld.nl
+npx github:dorelli-cloud/cli deploy --email jij@voorbeeld.nl
 ```
 
 De laatste regel van de uitvoer is je URL. Klaar.
@@ -30,9 +30,9 @@ De laatste regel van de uitvoer is je URL. Klaar.
 ## Commando's
 
 ```bash
-npx github:elsaviour/dorelli-cli deploy [map]   # publiceren of bijwerken
-npx github:elsaviour/dorelli-cli status [map]   # adres, status en verloopdatum
-npx github:elsaviour/dorelli-cli mcp            # draaien als MCP-server
+npx github:dorelli-cloud/cli deploy [map]   # publiceren of bijwerken
+npx github:dorelli-cloud/cli status [map]   # adres, status en verloopdatum
+npx github:dorelli-cloud/cli mcp            # draaien als MCP-server
 ```
 
 Opties bij `deploy`: `--email`, `--slug`, `--yes` (niets vragen, voor scripts
@@ -42,7 +42,7 @@ Typ je het vaker, installeer het dan één keer — daarna heet het gewoon
 `dorelli`:
 
 ```bash
-npm install -g github:elsaviour/dorelli-cli
+npm install -g github:dorelli-cloud/cli
 dorelli deploy
 ```
 
@@ -50,12 +50,12 @@ dorelli deploy
 
 Die tools hebben een terminal, dus dit werkt zonder installatie:
 
-> "Deploy deze map naar Dorelli met npx github:elsaviour/dorelli-cli deploy"
+> "Deploy deze map naar Dorelli met npx github:dorelli-cloud/cli deploy"
 
 Liever als MCP-tool, dan kan het model het zelf aanroepen:
 
 ```bash
-claude mcp add dorelli -- npx -y github:elsaviour/dorelli-cli mcp
+claude mcp add dorelli -- npx -y github:dorelli-cloud/cli mcp
 ```
 
 Daarna zijn `deploy_site` en `site_status` beschikbaar.
@@ -73,7 +73,7 @@ voor € 10 per maand — je krijgt na publicatie een mail met de beheerlink.
 ## Zelf een andere server gebruiken
 
 ```bash
-DORELLI_API=https://voorbeeld.test npx github:elsaviour/dorelli-cli deploy
+DORELLI_API=https://voorbeeld.test npx github:dorelli-cloud/cli deploy
 ```
 
 ## Voor de ontwikkelaar

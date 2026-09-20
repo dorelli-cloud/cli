@@ -13,7 +13,7 @@ binnen een minuut online. Bedoeld voor sites die met een AI-tool zijn gebouwd.
 Draai in de projectmap:
 
 ```bash
-npx github:elsaviour/dorelli-cli deploy --email <adres van de gebruiker> --yes
+npx github:dorelli-cloud/cli deploy --email <adres van de gebruiker> --yes
 ```
 
 De **laatste regel van de uitvoer is de URL** — geef die aan de gebruiker.
@@ -26,7 +26,7 @@ beheerlink heen. Gebruik nooit een verzonnen adres.
 Na de eerste keer staat er een `.dorelli.json` in de map. Draai dan gewoon:
 
 ```bash
-npx github:elsaviour/dorelli-cli deploy --yes
+npx github:dorelli-cloud/cli deploy --yes
 ```
 
 Dat werkt **dezelfde** site bij, op hetzelfde adres. Geen e-mailadres nodig.
@@ -35,7 +35,7 @@ Dit is de normale lus tijdens het bouwen: wijzigen, publiceren, bekijken.
 ## Status opvragen
 
 ```bash
-npx github:elsaviour/dorelli-cli status
+npx github:dorelli-cloud/cli status
 ```
 
 ## Belangrijk

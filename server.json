@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "cloud.dorelli/dorelli",
+  "description": "Deploy a static site or a Node app to Dorelli Cloud (dorelli.cloud): live on <name>.dorelli.cloud within a minute, hosted in the Netherlands. No PHP, no Python. EUR 10 per month for a website, EUR 15 for an app.",
+  "repository": {
+    "url": "https://github.com/dorelli-cloud/cli",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "dorelli",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "packageArguments": [{ "type": "positional", "value": "mcp" }]
+    }
+  ]
+}

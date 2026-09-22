@@ -2,7 +2,14 @@
   "name": "dorelli",
   "version": "0.1.0",
   "description": "Zet je statische website online op Dorelli Cloud — vanuit je terminal of vanuit een AI-tool zoals Claude Code, Codex of Cursor.",
-  "keywords": ["hosting", "deploy", "static-site", "mcp", "claude", "nederland"],
+  "keywords": [
+    "hosting",
+    "deploy",
+    "static-site",
+    "mcp",
+    "claude",
+    "nederland"
+  ],
   "homepage": "https://dorelli.cloud/deployen",
   "repository": {
     "type": "git",
@@ -11,17 +18,25 @@
   "bugs": {
     "url": "https://github.com/dorelli-cloud/cli/issues"
   },
-  "author": "Uitgeverij Doreleijers",
+  "author": "Dorelli Cloud",
   "license": "MIT",
   "type": "module",
   "bin": {
     "dorelli": "bin/dorelli.js"
   },
-  "files": ["bin", "src", "skill", "README.md", "LICENSE"],
+  "files": [
+    "bin",
+    "src",
+    "skill",
+    "README.md",
+    "LICENSE",
+    "server.json"
+  ],
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "fflate": "^0.8.2"
-  }
+  },
+  "mcpName": "cloud.dorelli/dorelli"
 }

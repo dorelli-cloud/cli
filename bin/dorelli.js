@@ -34,7 +34,7 @@ Bewaar dat bestand, maar zet het niet in versiebeheer.
 
 Een app met database (Node/Next)? Die wordt op GitHub gebouwd, niet hier:
 zet de GitHub Action dorelli-deploy met plan: app in je repository.
-Zie https://dorelli.cloud/deployen en https://dorelli.cloud/prijzen.
+Zie https://dorelli.cloud/deploy en https://dorelli.cloud/pricing.
 `;
 
 function argsParsen(argv) {

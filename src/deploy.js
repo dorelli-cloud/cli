@@ -50,7 +50,9 @@ export function verzamelBestanden(map, { maxBestanden = 500 } = {}) {
         loop(vol, rel);
         continue;
       }
-      if (!TOEGESTAAN.has(path.extname(item.name).toLowerCase())) {
+      // _redirects heeft geen extensie, maar de server kent hem in de wortel.
+      const omleidingen = !voorvoegsel && item.name === "_redirects";
+      if (!omleidingen && !TOEGESTAAN.has(path.extname(item.name).toLowerCase())) {
         overgeslagen.push(rel);
         continue;
       }

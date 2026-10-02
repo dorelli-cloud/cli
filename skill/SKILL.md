@@ -62,4 +62,6 @@ npx github:dorelli-cloud/cli status
 | `no_index` | Geen `index.html` in de gepubliceerde map. |
 | `rate_limited` | Maximaal 5 nieuwe sites per uur. Wacht even. |
 | `blocked` | Door moderatie tegengehouden. Meld dit; niet omzeilen. |
-| `too_large` | Meer dan 50 MB of 500 bestanden. Publiceer alleen de buildmap. |
+| `too_large` | De upload is groter dan 50 MB, of uitgepakt groter dan 100 MB. Publiceer alleen de buildmap. |
+| `too_many` | Meer dan 500 bestanden. Publiceer alleen de buildmap. |
+| `file_too_large` | Eén bestand is groter dan 25 MB; `detail` noemt welk. Verklein het of laat het weg. |

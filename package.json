@@ -10,7 +10,7 @@
     "claude",
     "nederland"
   ],
-  "homepage": "https://dorelli.cloud/deployen",
+  "homepage": "https://dorelli.cloud/deploy",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dorelli-cloud/cli.git"

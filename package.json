@@ -1,6 +1,6 @@
 {
   "name": "dorelli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Zet je statische website online op Dorelli Cloud — vanuit je terminal of vanuit een AI-tool zoals Claude Code, Codex of Cursor.",
   "keywords": [
     "hosting",

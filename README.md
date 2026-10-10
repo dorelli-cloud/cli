@@ -21,6 +21,11 @@ De laatste regel van de uitvoer is je URL. Klaar.
   huidige map.
 - Slaat over wat er niet in hoort: `node_modules`, `.git`, `.env`, en alles
   wat geen statisch bestand is.
+- Haalt de opgeslagen plaats (GPS) uit je foto's voordat ze je computer
+  verlaten, met dezelfde code als de server. Dat gebeurt in wat er verstuurd
+  wordt; de foto's in je map blijven zoals ze zijn. De uitvoer zegt om hoeveel
+  foto's het ging, en welke niet zeker schoon zijn. De server controleert ze
+  daarna nog een keer.
 - Schrijft `.dorelli.json` met je site-id en token. Draai je het nog eens, dan
   wordt **dezelfde** site bijgewerkt — handig als je met een AI-tool aan het
   itereren bent.
@@ -80,6 +85,8 @@ DORELLI_API=https://voorbeeld.test npx github:dorelli-cloud/cli deploy
 
 Deze repo is een spiegel. De bron staat in `packages/dorelli/` in de
 hoofdrepo van dorelli.cloud; wijzig hem daar en kopieer hem hierheen, niet
-andersom.
+andersom. `src/beeld-metadata.js` is gegenereerd uit `lib/beeld-metadata.ts`
+van de hoofdrepo (`node scripts/cli-beeld-metadata.mjs`); bewerk hem niet met
+de hand.
 
 MIT-licentie.

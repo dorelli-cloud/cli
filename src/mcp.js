@@ -7,7 +7,7 @@
 // Gebruik in Claude Code:  claude mcp add dorelli -- npx -y dorelli mcp
 
 import path from "path";
-import { STANDAARD_API, haalStatus, leesConfig, publiceerMap } from "./deploy.js";
+import { STANDAARD_API, haalStatus, leesConfig, plaatsRegels, publiceerMap } from "./deploy.js";
 
 const PROTOCOL = "2024-11-05";
 
@@ -92,6 +92,7 @@ async function roepTool(naam, args) {
     if (r.overgeslagen.length) {
       regels.push(`Overgeslagen (niet-statisch): ${r.overgeslagen.slice(0, 5).join(", ")}${r.overgeslagen.length > 5 ? " …" : ""}`);
     }
+    regels.push(...plaatsRegels(r.plaats, r.warnings));
     return tekst(regels.join("\n"));
   }
 
@@ -131,7 +132,7 @@ process.stdin.on("data", async (stuk) => {
         antwoord(id, {
           protocolVersion: PROTOCOL,
           capabilities: { tools: {} },
-          serverInfo: { name: "dorelli", version: "0.1.0" },
+          serverInfo: { name: "dorelli", version: "0.2.0" },
         });
       } else if (method === "tools/list") {
         antwoord(id, { tools: TOOLS });

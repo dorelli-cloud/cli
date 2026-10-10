@@ -14,6 +14,7 @@ import {
   STANDAARD_API,
   haalStatus,
   leesConfig,
+  plaatsRegels,
   publiceerMap,
 } from "../src/deploy.js";
 
@@ -86,6 +87,7 @@ async function deploy(argv) {
       process.stderr.write(`  …en nog ${r.overgeslagen.length - 5} bestanden\n`);
     }
     process.stderr.write(`  ${r.bestanden} bestanden uit ${path.relative(map, r.siteMap) || "."}\n`);
+    for (const regel of plaatsRegels(r.plaats, r.warnings)) process.stderr.write(`  ${regel}\n`);
     if (r.nieuw) {
       process.stderr.write(`  ${CONFIG_BESTAND} aangemaakt — bewaren, niet committen\n`);
       process.stderr.write(`  beheerlink is gemaild naar ${email}\n`);

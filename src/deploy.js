@@ -67,6 +67,56 @@ export function verzamelBestanden(map, { maxBestanden = 500 } = {}) {
   return { bestanden, overgeslagen };
 }
 
+/**
+ * Haalt de plaats uit foto's voordat ze de laptop verlaten, met dezelfde
+ * functie als de server (lib/beeld-metadata.ts, omgezet door
+ * scripts/cli-beeld-metadata.mjs). Alleen wat geüpload wordt verandert; de
+ * bestanden in de map van de klant blijven zoals ze zijn. Gaat hier iets mis,
+ * dan gaan de originelen mee en doet de server zijn eigen ronde, zoals altijd.
+ *
+ * `haal` is er voor de proef; normaal laadt hij de functie zelf.
+ */
+export async function zonderPlaats(bestanden, haal) {
+  try {
+    const functie = haal ?? (await import("./beeld-metadata.js")).haalLocatieWeg;
+    const lijst = Object.entries(bestanden).map(([pad, inhoud]) => ({ pad, inhoud }));
+    const r = functie(lijst);
+    // Alleen een uitkomst met precies dezelfde paden, op dezelfde volgorde, telt.
+    const vorm = r?.bestanden?.length === lijst.length && Array.isArray(r.weg) && Array.isArray(r.niet);
+    if (!vorm || !r.bestanden.every((b, i) => b.pad === lijst[i].pad && b.inhoud instanceof Uint8Array)) {
+      throw new Error("onverwachte uitkomst");
+    }
+    const schoon = {};
+    for (const b of r.bestanden) schoon[b.pad] = b.inhoud;
+    return { bestanden: schoon, plaats: { weg: r.weg, niet: r.niet, fout: false } };
+  } catch {
+    return { bestanden, plaats: { weg: [], niet: [], fout: true } };
+  }
+}
+
+/**
+ * Wat de CLI en de MCP over de plaats in foto's zeggen, en daarna wat de
+ * server meldt (zijn `warnings`, in het Engels). Leeg als er niets te zeggen is.
+ */
+export function plaatsRegels(plaats, warnings = []) {
+  const regels = [];
+  if (plaats?.fout) {
+    regels.push("De plaats in foto's kon hier niet weg; de server haalt hem eruit voordat de site online komt.");
+  } else if (plaats) {
+    const n = plaats.weg.length;
+    if (n === 1) regels.push("Plaats uit 1 foto gehaald voordat hij je computer verliet.");
+    if (n > 1) regels.push(`Plaats uit ${n} foto's gehaald voordat ze je computer verlieten.`);
+    if (plaats.niet.length) {
+      const lijst = plaats.niet.slice(0, 5).join(", ") + (plaats.niet.length > 5 ? ` en nog ${plaats.niet.length - 5}` : "");
+      regels.push(`Niet zeker zonder plaats: ${lijst}. De server probeert het nog een keer; wil je zeker zijn, haal de plaats er dan zelf uit.`);
+    }
+  }
+  for (const w of Array.isArray(warnings) ? warnings : []) {
+    if (typeof w?.message === "string" && w.message) regels.push(`Server: ${w.message}`);
+  }
+  return regels;
+}
+
 export function maakZip(bestanden) {
   return zipSync(bestanden, { level: 6 });
 }
@@ -139,13 +189,15 @@ export async function publiceerMap({ map, email, slug, api = STANDAARD_API, bron
     );
   }
 
-  const { bestanden, overgeslagen } = verzamelBestanden(siteMap);
+  const { bestanden: origineel, overgeslagen } = verzamelBestanden(siteMap);
+  // Vlak voor het inpakken: de plaats gaat uit de foto's die we versturen.
+  const { bestanden, plaats } = await zonderPlaats(origineel);
   const zip = maakZip(bestanden);
   const config = leesConfig(map);
 
   if (config?.site_id && config?.deploy_token) {
     const r = await publiceerOpnieuw({ api, zip, siteId: config.site_id, token: config.deploy_token });
-    return { ...r, nieuw: false, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length };
+    return { ...r, nieuw: false, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length, plaats };
   }
 
   if (!email) throw new Error("e-mailadres nodig voor de eerste publicatie");
@@ -157,5 +209,5 @@ export async function publiceerMap({ map, email, slug, api = STANDAARD_API, bron
     // Dit token is het bewijs van eigendom; niet in versiebeheer zetten.
     deploy_token: r.deploy_token,
   });
-  return { ...r, nieuw: true, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length };
+  return { ...r, nieuw: true, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length, plaats };
 }

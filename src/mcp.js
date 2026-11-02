@@ -1,35 +1,57 @@
-// MCP-server (stdio) voor Dorelli Cloud.
+// MCP server (stdio) for Dorelli Cloud.
 //
-// Bewust zonder SDK: het stdio-protocol is regel-gescheiden JSON-RPC, en dat is
-// een handvol regels. Zo blijft het pakket op één afhankelijkheid (fflate) en
-// is er niets dat kan verouderen buiten ons zicht om.
+// Deliberately without an SDK: the stdio protocol is newline-separated
+// JSON-RPC, and that takes a handful of lines. The package keeps one
+// dependency (fflate), and nothing can go stale out of our sight.
 //
-// Gebruik in Claude Code:  claude mcp add dorelli -- npx -y dorelli mcp
+// Two protocol eras on the same stdin, like the remote server (lib/mcp.ts):
+// a message that carries a `_meta` envelope with a protocol version gets the
+// stateless rules of 2026-07-28 (server/discover, no handshake); a message
+// without one gets the 2025 rules with the `initialize` handshake. The era
+// test is the one the official SDK uses, so a client that probes with
+// server/discover first (Claude Code since 2.1.292) gets a real answer
+// instead of a slow fallback.
+//
+// Use in Claude Code:  claude mcp add dorelli -- npx -y github:dorelli-cloud/cli mcp
+//
+// Tool descriptions and results are English: a model reads them.
 
 import path from "path";
+import { createRequire } from "module";
 import { STANDAARD_API, haalStatus, leesConfig, plaatsRegels, publiceerMap } from "./deploy.js";
 
-const PROTOCOL = "2024-11-05";
+/** The stateless revision: every request carries its own version and capabilities. */
+const PROTOCOL_MODERN = "2026-07-28";
+/** What `initialize` answers when the client asks for one of these; otherwise PROTOCOL. */
+const PROTOCOLLEN_LEGACY = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+const PROTOCOL = "2025-06-18";
+// One version, from package.json: --version, the changelog and this server say the same.
+const VERSIE = createRequire(import.meta.url)("../package.json").version;
+const SERVER = { name: "dorelli", version: VERSIE };
+
+const META_VERSIE = "io.modelcontextprotocol/protocolVersion";
+const META_CLIENT_CAPABILITIES = "io.modelcontextprotocol/clientCapabilities";
+const META_SERVER_INFO = "io.modelcontextprotocol/serverInfo";
 
 const TOOLS = [
   {
     name: "deploy_site",
     description:
-      "Publiceer een map met een statische website op Dorelli Cloud. De site komt binnen een minuut online op <naam>.dorelli.cloud. Bij de eerste publicatie is een e-mailadres nodig; daarna onthoudt .dorelli.json de site en publiceert dit dezelfde site opnieuw.",
+      "Publish a folder with a static website on Dorelli Cloud. The site is online at <name>.dorelli.cloud within a minute. The first publication needs an email address; after that .dorelli.json remembers the site and this publishes the same site again.",
     inputSchema: {
       type: "object",
       properties: {
         directory: {
           type: "string",
-          description: "Pad naar de map met de site. Een build-map (dist, build, out, public) wordt automatisch gevonden.",
+          description: "Path to the folder with the site. A build folder (dist, build, out, public) is found automatically.",
         },
         email: {
           type: "string",
-          description: "E-mailadres voor de beheerlink. Alleen nodig bij de eerste publicatie.",
+          description: "Email address for the management link. Only needed for the first publication.",
         },
         slug: {
           type: "string",
-          description: "Gewenst subdomein, bijvoorbeeld 'bakkerij-jansen'. Optioneel.",
+          description: "The subdomain you want, for example 'bakery-jansen'. Optional.",
         },
       },
       required: ["directory"],
@@ -38,11 +60,11 @@ const TOOLS = [
   {
     name: "site_status",
     description:
-      "Toon de status van een eerder gepubliceerde site: adres, of hij nog actief is, en wanneer de proefperiode afloopt.",
+      "Show the status of a site published earlier: its address, whether it is still active, and when the trial ends.",
     inputSchema: {
       type: "object",
       properties: {
-        directory: { type: "string", description: "Map met .dorelli.json" },
+        directory: { type: "string", description: "Folder with .dorelli.json" },
       },
       required: ["directory"],
     },
@@ -57,8 +79,8 @@ function antwoord(id, result) {
   stuur({ jsonrpc: "2.0", id, result });
 }
 
-function foutmelding(id, code, message) {
-  stuur({ jsonrpc: "2.0", id, error: { code, message } });
+function foutmelding(id, code, message, data) {
+  stuur({ jsonrpc: "2.0", id, error: data === undefined ? { code, message } : { code, message, data } });
 }
 
 function tekst(inhoud, isError = false) {
@@ -72,7 +94,7 @@ async function roepTool(naam, args) {
     const bestaand = leesConfig(map);
     if (!bestaand && !args?.email) {
       return tekst(
-        "Voor de eerste publicatie is een e-mailadres nodig (parameter 'email'). Daar gaat de beheerlink heen.",
+        "The first publication needs an email address (parameter 'email'). The management link goes there.",
         true
       );
     }
@@ -84,13 +106,13 @@ async function roepTool(naam, args) {
       bron: "cli",
     });
     const regels = [
-      r.nieuw ? `Site gepubliceerd: ${r.url}` : `Site bijgewerkt: ${r.url}`,
-      `${r.bestanden} bestanden uit ${path.relative(map, r.siteMap) || "."}`,
-      `Proefperiode loopt tot ${r.expires_at}`,
+      r.nieuw ? `Site published: ${r.url}` : `Site updated: ${r.url}`,
+      `${r.bestanden} ${r.bestanden === 1 ? "file" : "files"} from ${path.relative(map, r.siteMap) || "."}`,
+      `Trial runs until ${r.expires_at}`,
     ];
-    if (r.nieuw) regels.push(`Beheerlink gemaild naar ${args.email}. .dorelli.json aangemaakt — bewaren, niet committen.`);
+    if (r.nieuw) regels.push(`Management link sent to ${args.email}. Created .dorelli.json: keep it, do not commit it.`);
     if (r.overgeslagen.length) {
-      regels.push(`Overgeslagen (niet-statisch): ${r.overgeslagen.slice(0, 5).join(", ")}${r.overgeslagen.length > 5 ? " …" : ""}`);
+      regels.push(`Skipped (not static): ${r.overgeslagen.slice(0, 5).join(", ")}${r.overgeslagen.length > 5 ? " …" : ""}`);
     }
     regels.push(...plaatsRegels(r.plaats, r.warnings));
     return tekst(regels.join("\n"));
@@ -98,12 +120,70 @@ async function roepTool(naam, args) {
 
   if (naam === "site_status") {
     const config = leesConfig(map);
-    if (!config?.site_id) return tekst(`Geen .dorelli.json in ${map} — er is hier nog niets gepubliceerd.`, true);
+    if (!config?.site_id) return tekst(`No .dorelli.json in ${map}: nothing has been published from here yet.`, true);
     const r = await haalStatus({ api: STANDAARD_API, siteId: config.site_id, token: config.deploy_token });
-    return tekst(`${r.url}\nstatus: ${r.status}\nverloopt: ${r.expires_at}\nbestanden: ${r.files}`);
+    return tekst(`${r.url}\nstatus: ${r.status}\nexpires: ${r.expires_at}\nfiles: ${r.files}`);
   }
 
-  return tekst(`Onbekende tool: ${naam}`, true);
+  return tekst(`Unknown tool: ${naam}`, true);
+}
+
+/** A tools/call in either era; a failed deploy is a result the model reads, not a protocol error. */
+async function toolResultaat(params) {
+  try {
+    return await roepTool(params?.name, params?.arguments);
+  } catch (e) {
+    return tekst(`Failed: ${e.message}`, true);
+  }
+}
+
+/** Every modern result carries `resultType` and who answered. */
+function modern(result) {
+  return { ...result, resultType: "complete", _meta: { [META_SERVER_INFO]: SERVER } };
+}
+
+/**
+ * One 2026-07-28 request. The checks run in the SDK's order: the envelope's
+ * shape, then whether we speak the version, then the method. There are no
+ * headers on stdio, so Mcp-Method and Mcp-Name do not apply here.
+ */
+async function verwerkModern(id, method, params) {
+  const meta = params._meta;
+  const versie = meta[META_VERSIE];
+  const slecht = (sleutel, probleem) =>
+    foutmelding(id, -32602, `Invalid _meta envelope for protocol revision ${PROTOCOL_MODERN}: ${sleutel}: ${probleem}`, { envelope: { key: sleutel, problem: probleem } });
+  if (typeof versie !== "string") return slecht(META_VERSIE, "invalid");
+  const caps = meta[META_CLIENT_CAPABILITIES];
+  if (caps === undefined) return slecht(META_CLIENT_CAPABILITIES, "missing");
+  if (typeof caps !== "object" || caps === null || Array.isArray(caps)) return slecht(META_CLIENT_CAPABILITIES, "invalid");
+  if (versie !== PROTOCOL_MODERN) {
+    return foutmelding(id, -32022, `Unsupported protocol version: ${versie}`, { supported: [PROTOCOL_MODERN], requested: versie });
+  }
+  if (method === "server/discover") {
+    return antwoord(id, modern({ supportedVersions: [PROTOCOL_MODERN], capabilities: { tools: { listChanged: false } }, ttlMs: 0, cacheScope: "private" }));
+  }
+  if (method === "tools/list") {
+    // The same two tools for everyone, so a client may keep the list for an hour.
+    return antwoord(id, modern({ tools: TOOLS, ttlMs: 3_600_000, cacheScope: "public" }));
+  }
+  if (method === "tools/call") return antwoord(id, modern(await toolResultaat(params)));
+  return foutmelding(id, -32601, "Method not found");
+}
+
+/** One 2025-era message: the handshake, then methods without an envelope. */
+async function verwerkLegacy(id, method, params) {
+  if (method === "initialize") {
+    const gevraagd = params?.protocolVersion;
+    return antwoord(id, {
+      protocolVersion: PROTOCOLLEN_LEGACY.includes(gevraagd) ? gevraagd : PROTOCOL,
+      capabilities: { tools: {} },
+      serverInfo: SERVER,
+    });
+  }
+  if (method === "tools/list") return antwoord(id, { tools: TOOLS });
+  if (method === "tools/call") return antwoord(id, await toolResultaat(params));
+  if (method === "ping") return antwoord(id, {});
+  return foutmelding(id, -32601, `unknown method: ${method}`);
 }
 
 let buffer = "";
@@ -120,34 +200,22 @@ process.stdin.on("data", async (stuk) => {
     try {
       bericht = JSON.parse(regel);
     } catch {
-      continue; // onleesbare regel overslaan; geen id om op te antwoorden
+      continue; // skip an unreadable line; there is no id to answer
     }
+    // A line that is JSON but not a message (null, a number, an array) has no
+    // id to answer either, and must never stop the server.
+    if (!bericht || typeof bericht !== "object" || Array.isArray(bericht)) continue;
 
     const { id, method, params } = bericht;
-    // Notificaties (zonder id) hoeven geen antwoord.
+    // Notifications (without an id) need no answer.
     if (id === undefined) continue;
 
     try {
-      if (method === "initialize") {
-        antwoord(id, {
-          protocolVersion: PROTOCOL,
-          capabilities: { tools: {} },
-          serverInfo: { name: "dorelli", version: "0.2.0" },
-        });
-      } else if (method === "tools/list") {
-        antwoord(id, { tools: TOOLS });
-      } else if (method === "tools/call") {
-        antwoord(id, await roepTool(params?.name, params?.arguments));
-      } else if (method === "ping") {
-        antwoord(id, {});
-      } else {
-        foutmelding(id, -32601, `onbekende methode: ${method}`);
-      }
+      const meta = params && typeof params === "object" ? params._meta : undefined;
+      if (meta && typeof meta === "object" && meta[META_VERSIE] !== undefined) await verwerkModern(id, method, params);
+      else await verwerkLegacy(id, method, params);
     } catch (e) {
-      // Een mislukte deploy is een normaal resultaat voor de aanroeper, geen
-      // protocolfout: teruggeven als tekst zodat het model het kan lezen.
-      if (method === "tools/call") antwoord(id, tekst(`Mislukt: ${e.message}`, true));
-      else foutmelding(id, -32603, e.message);
+      foutmelding(id, -32603, e.message);
     }
   }
 });

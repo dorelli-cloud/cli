@@ -1,14 +1,14 @@
 {
   "name": "dorelli",
-  "version": "0.2.0",
-  "description": "Zet je statische website online op Dorelli Cloud — vanuit je terminal of vanuit een AI-tool zoals Claude Code, Codex of Cursor.",
+  "version": "0.3.0",
+  "description": "Put your static website online on Dorelli Cloud, from your terminal or from an AI tool such as Claude Code, Codex or Cursor.",
   "keywords": [
     "hosting",
     "deploy",
     "static-site",
     "mcp",
     "claude",
-    "nederland"
+    "netherlands"
   ],
   "homepage": "https://dorelli.cloud/deploy",
   "repository": {

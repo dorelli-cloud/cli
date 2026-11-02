@@ -1,92 +1,92 @@
 # dorelli
 
-Zet je statische website online op [Dorelli Cloud](https://dorelli.cloud) —
-vanuit je terminal of rechtstreeks vanuit een AI-tool.
+Put your static website online on [Dorelli Cloud](https://dorelli.cloud),
+from your terminal or straight from an AI tool.
 
-Gebouwd met Lovable, v0, Claude of Cursor? Eén commando en je site staat live
-op `jouw-naam.dorelli.cloud`. Geen account nodig.
-
-```bash
-npx github:dorelli-cloud/cli deploy --email jij@voorbeeld.nl
-```
-
-De laatste regel van de uitvoer is je URL. Klaar.
-
-> Het pakket draait rechtstreeks vanaf GitHub; je hebt alleen Node 18+ en git
-> nodig. Zodra het op npm staat wordt het commando korter (`npx dorelli`).
-
-## Wat het doet
-
-- Zoekt zelf je buildmap (`dist`, `build`, `out`, `public`) of gebruikt de
-  huidige map.
-- Slaat over wat er niet in hoort: `node_modules`, `.git`, `.env`, en alles
-  wat geen statisch bestand is.
-- Haalt de opgeslagen plaats (GPS) uit je foto's voordat ze je computer
-  verlaten, met dezelfde code als de server. Dat gebeurt in wat er verstuurd
-  wordt; de foto's in je map blijven zoals ze zijn. De uitvoer zegt om hoeveel
-  foto's het ging, en welke niet zeker schoon zijn. De server controleert ze
-  daarna nog een keer.
-- Schrijft `.dorelli.json` met je site-id en token. Draai je het nog eens, dan
-  wordt **dezelfde** site bijgewerkt — handig als je met een AI-tool aan het
-  itereren bent.
-
-> Zet `.dorelli.json` niet in versiebeheer: het token is je toegang tot de site.
-
-## Commando's
+Built with Lovable, v0, Claude or Cursor? One command and your site is live
+on `your-name.dorelli.cloud`. No account needed.
 
 ```bash
-npx github:dorelli-cloud/cli deploy [map]   # publiceren of bijwerken
-npx github:dorelli-cloud/cli status [map]   # adres, status en verloopdatum
-npx github:dorelli-cloud/cli mcp            # draaien als MCP-server
+npx github:dorelli-cloud/cli deploy --email you@example.com
 ```
 
-Opties bij `deploy`: `--email`, `--slug`, `--yes` (niets vragen, voor scripts
-en AI-tools).
+The last line of the output is your URL. Done.
 
-Typ je het vaker, installeer het dan één keer — daarna heet het gewoon
-`dorelli`:
+> The package runs straight from GitHub; you only need Node 18+ and git.
+> Once it is on npm the command gets shorter (`npx dorelli`).
+
+## What it does
+
+- Finds your build folder (`dist`, `build`, `out`, `public`) by itself, or
+  uses the current folder.
+- Skips what does not belong: `node_modules`, `.git`, `.env`, and everything
+  that is not a static file.
+- Removes the stored location (GPS) from your photos before they leave your
+  computer, with the same code as the server. That happens in what is sent;
+  the photos in your folder stay as they are. The output says how many photos
+  that was, and which ones are not certainly clean. The server checks them
+  again afterwards.
+- Writes `.dorelli.json` with your site id and token. Run it again and the
+  **same** site is updated, handy while you iterate with an AI tool.
+
+> Keep `.dorelli.json` out of version control: the token is your access to the site.
+
+All output is in English, so an agent or a developer anywhere can read what
+went wrong. The last line of a successful deploy is always the URL.
+
+## Commands
+
+```bash
+npx github:dorelli-cloud/cli deploy [folder]   # publish or update
+npx github:dorelli-cloud/cli status [folder]   # address, status and expiry date
+npx github:dorelli-cloud/cli mcp               # run as an MCP server
+```
+
+Options for `deploy`: `--email`, `--slug`, `--yes` (never ask anything, for
+scripts and AI tools).
+
+Typing it often? Install it once, and after that it is just `dorelli`:
 
 ```bash
 npm install -g github:dorelli-cloud/cli
 dorelli deploy
 ```
 
-## Vanuit Claude Code, Codex of Cursor
+## From Claude Code, Codex or Cursor
 
-Die tools hebben een terminal, dus dit werkt zonder installatie:
+Those tools have a terminal, so this works without installing anything:
 
-> "Deploy deze map naar Dorelli met npx github:dorelli-cloud/cli deploy"
+> "Deploy this folder to Dorelli with npx github:dorelli-cloud/cli deploy"
 
-Liever als MCP-tool, dan kan het model het zelf aanroepen:
+Prefer an MCP tool, so the model can call it itself:
 
 ```bash
 claude mcp add dorelli -- npx -y github:dorelli-cloud/cli mcp
 ```
 
-Daarna zijn `deploy_site` en `site_status` beschikbaar.
+After that `deploy_site` and `site_status` are available.
 
-## Wat wordt gehost
+## What is hosted
 
-Statische sites: HTML, CSS, afbeeldingen en JavaScript dat in de browser
-draait. Heeft je project een server, database of een build-stap nodig, bouw
-het dan eerst (`npm run build`) en publiceer de uitvoermap.
+Static sites: HTML, CSS, images and JavaScript that runs in the browser. If
+your project needs a server, a database or a build step, build it first
+(`npm run build`) and publish the output folder.
 
-Een proefsite blijft 14 dagen staan en wordt niet door Google geïndexeerd.
-Wil je hem houden, met je eigen domeinnaam en e-mail erbij? Dat regelt Dorelli
-voor € 10 per maand — je krijgt na publicatie een mail met de beheerlink.
+A trial site stays up for 14 days and is not indexed by Google. Want to keep
+it, with your own domain name and email? Dorelli does that for € 10 a month;
+after publishing you get an email with the management link.
 
-## Zelf een andere server gebruiken
+## Using another server
 
 ```bash
-DORELLI_API=https://voorbeeld.test npx github:dorelli-cloud/cli deploy
+DORELLI_API=https://example.test npx github:dorelli-cloud/cli deploy
 ```
 
-## Voor de ontwikkelaar
+## For the developer
 
-Deze repo is een spiegel. De bron staat in `packages/dorelli/` in de
-hoofdrepo van dorelli.cloud; wijzig hem daar en kopieer hem hierheen, niet
-andersom. `src/beeld-metadata.js` is gegenereerd uit `lib/beeld-metadata.ts`
-van de hoofdrepo (`node scripts/cli-beeld-metadata.mjs`); bewerk hem niet met
-de hand.
+This repo is a mirror. The source lives in `packages/dorelli/` in the main
+repo of dorelli.cloud; change it there and copy it here, not the other way
+round. `src/beeld-metadata.js` is generated from `lib/beeld-metadata.ts` in
+the main repo (`node scripts/cli-beeld-metadata.mjs`); do not edit it by hand.
 
-MIT-licentie.
+MIT license.

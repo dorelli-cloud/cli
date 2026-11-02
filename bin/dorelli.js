@@ -1,10 +1,13 @@
 #!/usr/bin/env node
-// CLI voor Dorelli Cloud.
+// CLI for Dorelli Cloud.
 //
-// Bedoeld om óók door een AI-tool gedraaid te worden: Claude Code, Codex en
-// Cursor hebben allemaal een shell en volgen "run npx dorelli deploy" zonder
-// dat de gebruiker iets hoeft te configureren. Daarom is de uitvoer kort en
-// eenduidig, en staat het resultaat altijd op de laatste regel.
+// Meant to be run by an AI tool as well: Claude Code, Codex and Cursor all
+// have a shell and follow "run npx dorelli deploy" without the user having to
+// configure anything. That is why the output is short and unambiguous, and the
+// result is always on the last line.
+//
+// All output is English, like llms.txt: an agent or a developer outside the
+// Netherlands can read what went wrong.
 
 import fs from "fs";
 import path from "path";
@@ -19,23 +22,23 @@ import {
 } from "../src/deploy.js";
 
 const HELP = `
-dorelli — zet je statische website online
+dorelli: put your static website online
 
-  npx dorelli deploy [map]     publiceer (of publiceer opnieuw)
-  npx dorelli status [map]     toon status en verloopdatum
-  npx dorelli mcp              draai als MCP-server (voor Claude Code e.d.)
+  npx dorelli deploy [folder]   publish (or publish again)
+  npx dorelli status [folder]   show status and expiry date
+  npx dorelli mcp               run as an MCP server (for Claude Code and similar)
 
-Opties bij deploy:
-  --email <adres>    nodig bij de eerste publicatie
-  --slug <naam>      gewenst subdomein (anders kiezen wij er een)
-  --yes              niets vragen (voor gebruik door scripts en AI-tools)
+Options for deploy:
+  --email <address>  needed for the first publication
+  --slug <name>      the subdomain you want (otherwise we pick one)
+  --yes              never ask anything (for scripts and AI tools)
 
-De eerste publicatie schrijft ${CONFIG_BESTAND} met je site-id en token.
-Bewaar dat bestand, maar zet het niet in versiebeheer.
+The first publication writes ${CONFIG_BESTAND} with your site id and token.
+Keep that file, but keep it out of version control.
 
-Een app met database (Node/Next)? Die wordt op GitHub gebouwd, niet hier:
-zet de GitHub Action dorelli-deploy met plan: app in je repository.
-Zie https://dorelli.cloud/deploy en https://dorelli.cloud/pricing.
+An app with a database (Node/Next)? That is built on GitHub, not here:
+add the GitHub Action dorelli-deploy with plan: app to your repository.
+See https://dorelli.cloud/deploy and https://dorelli.cloud/pricing.
 `;
 
 function argsParsen(argv) {
@@ -61,7 +64,7 @@ async function deploy(argv) {
   const api = opties.api ?? STANDAARD_API;
 
   if (!fs.existsSync(map)) {
-    console.error(`Map bestaat niet: ${map}`);
+    console.error(`Folder does not exist: ${map}`);
     process.exit(1);
   }
 
@@ -69,40 +72,40 @@ async function deploy(argv) {
   let email = opties.email;
   if (!bestaand && !email) {
     if (opties.yes || !process.stdin.isTTY) {
-      console.error("Eerste publicatie heeft een e-mailadres nodig: --email jij@voorbeeld.nl");
+      console.error("The first publication needs an email address: --email you@example.com");
       process.exit(1);
     }
-    email = await vraag("E-mailadres (voor de beheerlink): ");
+    email = await vraag("Email address (for the management link): ");
   }
 
-  process.stderr.write(bestaand ? "Opnieuw publiceren…\n" : "Publiceren…\n");
+  process.stderr.write(bestaand ? "Publishing again…\n" : "Publishing…\n");
 
   try {
     const r = await publiceerMap({ map, email, slug: opties.slug, api });
 
     for (const o of r.overgeslagen.slice(0, 5)) {
-      process.stderr.write(`  overgeslagen (niet-statisch): ${o}\n`);
+      process.stderr.write(`  skipped (not static): ${o}\n`);
     }
     if (r.overgeslagen.length > 5) {
-      process.stderr.write(`  …en nog ${r.overgeslagen.length - 5} bestanden\n`);
+      process.stderr.write(`  …and ${r.overgeslagen.length - 5} more files\n`);
     }
-    process.stderr.write(`  ${r.bestanden} bestanden uit ${path.relative(map, r.siteMap) || "."}\n`);
+    process.stderr.write(`  ${r.bestanden} ${r.bestanden === 1 ? "file" : "files"} from ${path.relative(map, r.siteMap) || "."}\n`);
     for (const regel of plaatsRegels(r.plaats, r.warnings)) process.stderr.write(`  ${regel}\n`);
     if (r.nieuw) {
-      process.stderr.write(`  ${CONFIG_BESTAND} aangemaakt — bewaren, niet committen\n`);
-      process.stderr.write(`  beheerlink is gemaild naar ${email}\n`);
+      process.stderr.write(`  ${CONFIG_BESTAND} created: keep it, do not commit it\n`);
+      process.stderr.write(`  management link sent to ${email}\n`);
     }
 
-    // Laatste regel is de URL: makkelijk te lezen voor mens en script.
+    // The last line is the URL: easy to read for people and scripts.
     console.log(r.url);
   } catch (e) {
-    console.error(`\nPubliceren mislukt: ${e.message}`);
+    console.error(`\nPublishing failed: ${e.message}`);
     if (e.code === "blocked") {
-      console.error("De inhoud is door de moderatie tegengehouden.");
+      console.error("Moderation stopped the content.");
     } else if (e.code === "bad_type") {
-      console.error("Tip: de CLI publiceert statische sites. Bouw je project eerst (npm run build), of gebruik voor een Node-app de GitHub Action met plan: app.");
+      console.error("Tip: the CLI publishes static sites. Build your project first (npm run build), or use the GitHub Action with plan: app for a Node app.");
     } else if (e.code === "rate_limited") {
-      console.error("Tip: wacht even; er geldt een limiet op nieuwe sites per uur.");
+      console.error("Tip: wait a while; there is a limit on new sites per hour.");
     }
     process.exit(1);
   }
@@ -113,7 +116,7 @@ async function status(argv) {
   const map = path.resolve(rest[0] ?? ".");
   const config = leesConfig(map);
   if (!config?.site_id) {
-    console.error(`Geen ${CONFIG_BESTAND} gevonden in ${map} — nog niets gepubliceerd?`);
+    console.error(`No ${CONFIG_BESTAND} found in ${map}. Nothing published from here yet?`);
     process.exit(1);
   }
   try {
@@ -122,9 +125,9 @@ async function status(argv) {
       siteId: config.site_id,
       token: config.deploy_token,
     });
-    console.log(`${r.url}\nplan: ${r.plan ?? "website"}\nstatus: ${r.status}\nverloopt: ${r.expires_at}\n${r.plan === "app" ? `image: ${r.image ?? "-"}` : `bestanden: ${r.files}`}`);
+    console.log(`${r.url}\nplan: ${r.plan ?? "website"}\nstatus: ${r.status}\nexpires: ${r.expires_at}\n${r.plan === "app" ? `image: ${r.image ?? "-"}` : `files: ${r.files}`}`);
   } catch (e) {
-    console.error(`Status ophalen mislukt: ${e.message}`);
+    console.error(`Getting the status failed: ${e.message}`);
     process.exit(1);
   }
 }

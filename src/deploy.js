@@ -1,7 +1,7 @@
-// Gedeelde deploy-logica voor de CLI en de MCP-server.
+// Shared deploy logic for the CLI and the MCP server.
 //
-// Beide zijn schillen om dezelfde HTTP-API; er staat hier bewust geen
-// kanaalspecifieke logica in.
+// Both are shells around the same HTTP API; on purpose there is no
+// channel-specific logic here. Everything a user or an agent reads is English.
 
 import fs from "fs";
 import path from "path";
@@ -10,13 +10,13 @@ import { zipSync } from "fflate";
 export const STANDAARD_API = process.env.DORELLI_API ?? "https://dorelli.cloud";
 export const CONFIG_BESTAND = ".dorelli.json";
 
-// Mappen die nooit mee moeten: buildgereedschap, versiebeheer, geheimen.
+// Folders that never go along: build tools, version control, secrets.
 const OVERSLAAN = new Set([
   "node_modules", ".git", ".next", ".nuxt", ".svelte-kit", ".vercel", ".netlify",
   ".cache", "coverage", ".turbo", ".parcel-cache", ".vscode", ".idea", ".claude",
 ]);
 
-// Alleen wat een browser statisch kan tonen; spiegelt de whitelist op de server.
+// Only what a browser can show statically; mirrors the allow list on the server.
 const TOEGESTAAN = new Set([
   ".html", ".htm", ".css", ".js", ".mjs", ".map",
   ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".avif", ".ico", ".bmp",
@@ -24,7 +24,7 @@ const TOEGESTAAN = new Set([
   ".txt", ".webmanifest", ".json", ".xml", ".pdf", ".mp4", ".webm", ".mp3",
 ]);
 
-/** Zoekt de map die gepubliceerd moet worden: een buildmap, anders de map zelf. */
+/** Finds the folder to publish: a build folder, otherwise the folder itself. */
 export function vindSiteMap(basis) {
   for (const kandidaat of ["dist", "build", "out", "public", "_site"]) {
     const pad = path.join(basis, kandidaat);
@@ -33,7 +33,7 @@ export function vindSiteMap(basis) {
   return basis;
 }
 
-/** Verzamelt de publiceerbare bestanden, met dezelfde grenzen als de server. */
+/** Collects the files to publish, with the same limits as the server. */
 export function verzamelBestanden(map, { maxBestanden = 500 } = {}) {
   const bestanden = {};
   const overgeslagen = [];
@@ -45,19 +45,19 @@ export function verzamelBestanden(map, { maxBestanden = 500 } = {}) {
       const vol = path.join(huidig, item.name);
       const rel = voorvoegsel ? `${voorvoegsel}/${item.name}` : item.name;
 
-      if (item.isSymbolicLink()) continue; // nooit buiten de map wijzen
+      if (item.isSymbolicLink()) continue; // never point outside the folder
       if (item.isDirectory()) {
         loop(vol, rel);
         continue;
       }
-      // _redirects heeft geen extensie, maar de server kent hem in de wortel.
+      // _redirects has no extension, but the server knows it in the root.
       const omleidingen = !voorvoegsel && item.name === "_redirects";
       if (!omleidingen && !TOEGESTAAN.has(path.extname(item.name).toLowerCase())) {
         overgeslagen.push(rel);
         continue;
       }
       if (++aantal > maxBestanden) {
-        throw new Error(`meer dan ${maxBestanden} bestanden — publiceer een buildmap in plaats van het hele project`);
+        throw new Error(`more than ${maxBestanden} files: publish a build folder instead of the whole project`);
       }
       bestanden[rel] = new Uint8Array(fs.readFileSync(vol));
     }
@@ -68,23 +68,23 @@ export function verzamelBestanden(map, { maxBestanden = 500 } = {}) {
 }
 
 /**
- * Haalt de plaats uit foto's voordat ze de laptop verlaten, met dezelfde
- * functie als de server (lib/beeld-metadata.ts, omgezet door
- * scripts/cli-beeld-metadata.mjs). Alleen wat geüpload wordt verandert; de
- * bestanden in de map van de klant blijven zoals ze zijn. Gaat hier iets mis,
- * dan gaan de originelen mee en doet de server zijn eigen ronde, zoals altijd.
+ * Removes the location from photos before they leave the laptop, with the
+ * same function as the server (lib/beeld-metadata.ts, converted by
+ * scripts/cli-beeld-metadata.mjs). Only what is uploaded changes; the files
+ * in the customer's folder stay as they are. If something goes wrong here,
+ * the originals go along and the server does its own pass, as always.
  *
- * `haal` is er voor de proef; normaal laadt hij de functie zelf.
+ * `haal` is there for the test; normally it loads the function itself.
  */
 export async function zonderPlaats(bestanden, haal) {
   try {
     const functie = haal ?? (await import("./beeld-metadata.js")).haalLocatieWeg;
     const lijst = Object.entries(bestanden).map(([pad, inhoud]) => ({ pad, inhoud }));
     const r = functie(lijst);
-    // Alleen een uitkomst met precies dezelfde paden, op dezelfde volgorde, telt.
+    // Only a result with exactly the same paths, in the same order, counts.
     const vorm = r?.bestanden?.length === lijst.length && Array.isArray(r.weg) && Array.isArray(r.niet);
     if (!vorm || !r.bestanden.every((b, i) => b.pad === lijst[i].pad && b.inhoud instanceof Uint8Array)) {
-      throw new Error("onverwachte uitkomst");
+      throw new Error("unexpected result");
     }
     const schoon = {};
     for (const b of r.bestanden) schoon[b.pad] = b.inhoud;
@@ -95,20 +95,20 @@ export async function zonderPlaats(bestanden, haal) {
 }
 
 /**
- * Wat de CLI en de MCP over de plaats in foto's zeggen, en daarna wat de
- * server meldt (zijn `warnings`, in het Engels). Leeg als er niets te zeggen is.
+ * What the CLI and the MCP say about the location in photos, followed by
+ * what the server reports (its `warnings`). Empty when there is nothing to say.
  */
 export function plaatsRegels(plaats, warnings = []) {
   const regels = [];
   if (plaats?.fout) {
-    regels.push("De plaats in foto's kon hier niet weg; de server haalt hem eruit voordat de site online komt.");
+    regels.push("Could not remove the location from photos here; the server removes it before the site goes online.");
   } else if (plaats) {
     const n = plaats.weg.length;
-    if (n === 1) regels.push("Plaats uit 1 foto gehaald voordat hij je computer verliet.");
-    if (n > 1) regels.push(`Plaats uit ${n} foto's gehaald voordat ze je computer verlieten.`);
+    if (n === 1) regels.push("Removed the location from 1 photo before it left your computer.");
+    if (n > 1) regels.push(`Removed the location from ${n} photos before they left your computer.`);
     if (plaats.niet.length) {
-      const lijst = plaats.niet.slice(0, 5).join(", ") + (plaats.niet.length > 5 ? ` en nog ${plaats.niet.length - 5}` : "");
-      regels.push(`Niet zeker zonder plaats: ${lijst}. De server probeert het nog een keer; wil je zeker zijn, haal de plaats er dan zelf uit.`);
+      const lijst = plaats.niet.slice(0, 5).join(", ") + (plaats.niet.length > 5 ? ` and ${plaats.niet.length - 5} more` : "");
+      regels.push(`Not sure the location is gone from: ${lijst}. The server tries again; to be sure, remove the location yourself.`);
     }
   }
   for (const w of Array.isArray(warnings) ? warnings : []) {
@@ -145,7 +145,7 @@ async function verwerk(res) {
   return json;
 }
 
-/** Eerste publicatie: maakt een nieuwe site aan. */
+/** First publication: creates a new site. */
 export async function publiceerNieuw({ api = STANDAARD_API, zip, email, slug, bron = "cli" }) {
   const res = await fetch(`${api}/api/deploy`, {
     method: "POST",
@@ -160,7 +160,7 @@ export async function publiceerNieuw({ api = STANDAARD_API, zip, email, slug, br
   return verwerk(res);
 }
 
-/** Opnieuw publiceren op dezelfde slug. */
+/** Publish again on the same slug. */
 export async function publiceerOpnieuw({ api = STANDAARD_API, zip, siteId, token }) {
   const res = await fetch(`${api}/api/deploy/${siteId}`, {
     method: "PUT",
@@ -178,19 +178,19 @@ export async function haalStatus({ api = STANDAARD_API, siteId, token }) {
 }
 
 /**
- * Publiceert een map: kiest zelf tussen nieuw en opnieuw op basis van
- * .dorelli.json, en schrijft dat bestand na een eerste publicatie weg.
+ * Publishes a folder: chooses between new and again based on .dorelli.json,
+ * and writes that file after a first publication.
  */
 export async function publiceerMap({ map, email, slug, api = STANDAARD_API, bron = "cli" }) {
   const siteMap = vindSiteMap(map);
   if (!fs.existsSync(path.join(siteMap, "index.html"))) {
     throw new Error(
-      `geen index.html gevonden in ${siteMap} — een statische site heeft een startpagina nodig`
+      `no index.html found in ${siteMap}: a static site needs a start page`
     );
   }
 
   const { bestanden: origineel, overgeslagen } = verzamelBestanden(siteMap);
-  // Vlak voor het inpakken: de plaats gaat uit de foto's die we versturen.
+  // Right before packing: the location comes out of the photos we send.
   const { bestanden, plaats } = await zonderPlaats(origineel);
   const zip = maakZip(bestanden);
   const config = leesConfig(map);
@@ -200,13 +200,13 @@ export async function publiceerMap({ map, email, slug, api = STANDAARD_API, bron
     return { ...r, nieuw: false, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length, plaats };
   }
 
-  if (!email) throw new Error("e-mailadres nodig voor de eerste publicatie");
+  if (!email) throw new Error("an email address is needed for the first publication");
   const r = await publiceerNieuw({ api, zip, email, slug, bron });
   schrijfConfig(map, {
     site_id: r.site_id,
     slug: r.slug,
     url: r.url,
-    // Dit token is het bewijs van eigendom; niet in versiebeheer zetten.
+    // This token is the proof of ownership; keep it out of version control.
     deploy_token: r.deploy_token,
   });
   return { ...r, nieuw: true, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length, plaats };

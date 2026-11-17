@@ -39,11 +39,20 @@ went wrong. The last line of a successful deploy is always the URL.
 ```bash
 npx github:dorelli-cloud/cli deploy [folder]   # publish or update
 npx github:dorelli-cloud/cli status [folder]   # address, status and expiry date
+npx github:dorelli-cloud/cli files             # list the files on your site
+npx github:dorelli-cloud/cli put <file...>     # add or replace files, in one publish
+npx github:dorelli-cloud/cli rm <path...>      # remove files, in one publish
 npx github:dorelli-cloud/cli mcp               # run as an MCP server
 ```
 
 Options for `deploy`: `--email`, `--slug`, `--yes` (never ask anything, for
 scripts and AI tools).
+
+`put` and `rm` change a few files without the rest of the site on your
+computer, for example a new photo: `put photo.jpg --dir images`. Each command
+is one publish with the same check as a deploy, and photos lose their stored
+location first. They read `.dorelli.json` from the current folder, or from
+`--site <folder>`. Since version 0.4.0.
 
 Typing it often? Install it once, and after that it is just `dorelli`:
 

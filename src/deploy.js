@@ -170,6 +170,33 @@ export async function publiceerOpnieuw({ api = STANDAARD_API, zip, siteId, token
   return verwerk(res);
 }
 
+/** The paths of the files on the site (a Website only). */
+export async function lijstBestanden({ api = STANDAARD_API, siteId, token }) {
+  const res = await fetch(`${api}/api/deploy/${siteId}/files`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  return verwerk(res);
+}
+
+/**
+ * Adds, replaces and removes files in one publication, without the rest of
+ * the site on this laptop: POST /api/deploy/<id>/changes. `zetten` maps a
+ * path on the site to its content; `weg` lists paths to remove. Photos lose
+ * their location first, as with deploy.
+ */
+export async function wijzigOpSite({ api = STANDAARD_API, siteId, token, zetten = {}, weg = [] }) {
+  const { bestanden, plaats } = await zonderPlaats(zetten);
+  const res = await fetch(`${api}/api/deploy/${siteId}/changes`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      files: Object.entries(bestanden).map(([path, inhoud]) => ({ path, content_base64: Buffer.from(inhoud).toString("base64") })),
+      delete: weg,
+    }),
+  });
+  return { ...(await verwerk(res)), plaats };
+}
+
 export async function haalStatus({ api = STANDAARD_API, siteId, token }) {
   const res = await fetch(`${api}/api/deploy/${siteId}`, {
     headers: { authorization: `Bearer ${token}` },

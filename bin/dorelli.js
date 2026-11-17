@@ -17,8 +17,10 @@ import {
   STANDAARD_API,
   haalStatus,
   leesConfig,
+  lijstBestanden,
   plaatsRegels,
   publiceerMap,
+  wijzigOpSite,
 } from "../src/deploy.js";
 
 const HELP = `
@@ -26,7 +28,15 @@ dorelli: put your static website online
 
   npx dorelli deploy [folder]   publish (or publish again)
   npx dorelli status [folder]   show status and expiry date
+  npx dorelli files             list the files on your site
+  npx dorelli put <file...>     add or replace files on your site, in one publication
+  npx dorelli rm <path...>      remove files from your site, in one publication
   npx dorelli mcp               run as an MCP server (for Claude Code and similar)
+
+Options for put:
+  --dir <folder>     the folder on your site, for example images (default: the top)
+
+files, put and rm read ${CONFIG_BESTAND} from the current folder, or from --site <folder>.
 
 Options for deploy:
   --email <address>  needed for the first publication
@@ -132,10 +142,79 @@ async function status(argv) {
   }
 }
 
+/** The site of .dorelli.json in --site or the current folder, or stop with a clear line. */
+function siteUit(opties) {
+  const map = path.resolve(opties.site ?? ".");
+  const config = leesConfig(map);
+  if (!config?.site_id || !config?.deploy_token) {
+    console.error(`No ${CONFIG_BESTAND} found in ${map}. Run this where you ran deploy, or pass --site <folder>.`);
+    process.exit(1);
+  }
+  return { api: opties.api ?? STANDAARD_API, siteId: config.site_id, token: config.deploy_token };
+}
+
+async function files(argv) {
+  const { opties } = argsParsen(argv);
+  try {
+    const r = await lijstBestanden(siteUit(opties));
+    for (const p of r.files ?? []) console.log(p);
+  } catch (e) {
+    console.error(`Listing the files failed: ${e.message}`);
+    // Na een fetch geen process.exit: op Windows breekt Node dan af met een
+    // assertie en exitcode 127, en een script leest dat verkeerd.
+    process.exitCode = 1;
+  }
+}
+
+/** put and rm: one publication through POST /api/deploy/<id>/changes. */
+async function wijzig(argv, soort) {
+  const { opties, rest } = argsParsen(argv);
+  if (rest.length === 0) {
+    console.error(soort === "put" ? "Name at least one file: dorelli put photo.jpg --dir images" : "Name at least one path: dorelli rm old.html");
+    process.exit(1);
+  }
+  const site = siteUit(opties);
+  const zetten = Object.create(null);
+  const weg = [];
+  if (soort === "put") {
+    const doel = (opties.dir ?? "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+    for (const bestand of rest) {
+      if (!fs.existsSync(bestand) || !fs.statSync(bestand).isFile()) {
+        console.error(`Not a file: ${bestand}`);
+        process.exit(1);
+      }
+      const naam = path.basename(bestand);
+      const pad = doel ? `${doel}/${naam}` : naam;
+      // a/logo.png en b/logo.png komen allebei op dezelfde plek; stil de laatste nemen verrast.
+      if (Object.hasOwn(zetten, pad)) {
+        console.error(`Two files would both become ${pad}. Put them one at a time, each with its own --dir.`);
+        process.exit(1);
+      }
+      zetten[pad] = new Uint8Array(fs.readFileSync(bestand));
+    }
+  } else {
+    for (const p of rest) weg.push(p.replace(/\\/g, "/").replace(/^\/+/, ""));
+  }
+  process.stderr.write("Publishing…\n");
+  try {
+    const r = await wijzigOpSite({ ...site, zetten, weg });
+    process.stderr.write(`  ${r.changed ?? 0} added or replaced, ${r.deleted ?? 0} removed; ${r.files} files on the site\n`);
+    for (const regel of plaatsRegels(r.plaats, r.warnings)) process.stderr.write(`  ${regel}\n`);
+    console.log(r.url);
+  } catch (e) {
+    console.error(`\nPublishing failed: ${e.message}`);
+    if (e.code === "conflict") console.error("Tip: someone published at the same time; run the command again.");
+    process.exitCode = 1;
+  }
+}
+
 const [commando, ...rest] = process.argv.slice(2);
 
 if (commando === "deploy") await deploy(rest);
 else if (commando === "status") await status(rest);
+else if (commando === "files") await files(rest);
+else if (commando === "put") await wijzig(rest, "put");
+else if (commando === "rm") await wijzig(rest, "rm");
 else if (commando === "mcp") await import("../src/mcp.js");
 else if (commando === "--version" || commando === "-v") {
   const pkg = JSON.parse(

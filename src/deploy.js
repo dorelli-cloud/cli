@@ -145,14 +145,26 @@ async function verwerk(res) {
   return json;
 }
 
+/**
+ * What the CLI and the MCP say about the location: the note of the server
+ * after a first publication, or that --location only counts the first time.
+ */
+export function locatieRegels(r) {
+  if (r.locatieNietGebruikt) return ["--location only counts for the first publication. To move the site, use Location in the portal."];
+  if (r.location?.note) return [r.location.note];
+  return [];
+}
+
 /** First publication: creates a new site. */
-export async function publiceerNieuw({ api = STANDAARD_API, zip, email, slug, bron = "cli" }) {
+export async function publiceerNieuw({ api = STANDAARD_API, zip, email, slug, location, bron = "cli" }) {
   const res = await fetch(`${api}/api/deploy`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       email,
       slug: slug || undefined,
+      // A code from GET /api/locations, such as azure:westeurope. Without it Dorelli chooses, in the EU.
+      location: location || undefined,
       source: bron,
       zip_base64: Buffer.from(zip).toString("base64"),
     }),
@@ -208,7 +220,7 @@ export async function haalStatus({ api = STANDAARD_API, siteId, token }) {
  * Publishes a folder: chooses between new and again based on .dorelli.json,
  * and writes that file after a first publication.
  */
-export async function publiceerMap({ map, email, slug, api = STANDAARD_API, bron = "cli" }) {
+export async function publiceerMap({ map, email, slug, location, api = STANDAARD_API, bron = "cli" }) {
   const siteMap = vindSiteMap(map);
   if (!fs.existsSync(path.join(siteMap, "index.html"))) {
     throw new Error(
@@ -224,11 +236,12 @@ export async function publiceerMap({ map, email, slug, api = STANDAARD_API, bron
 
   if (config?.site_id && config?.deploy_token) {
     const r = await publiceerOpnieuw({ api, zip, siteId: config.site_id, token: config.deploy_token });
-    return { ...r, nieuw: false, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length, plaats };
+    // The location is chosen at the first publication; a site moves in the portal.
+    return { ...r, nieuw: false, overgeslagen, siteMap, bestanden: Object.keys(bestanden).length, plaats, locatieNietGebruikt: !!location };
   }
 
   if (!email) throw new Error("an email address is needed for the first publication");
-  const r = await publiceerNieuw({ api, zip, email, slug, bron });
+  const r = await publiceerNieuw({ api, zip, email, slug, location, bron });
   schrijfConfig(map, {
     site_id: r.site_id,
     slug: r.slug,

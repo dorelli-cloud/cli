@@ -18,6 +18,7 @@ import {
   haalStatus,
   leesConfig,
   lijstBestanden,
+  locatieRegels,
   plaatsRegels,
   publiceerMap,
   wijzigOpSite,
@@ -41,6 +42,8 @@ files, put and rm read ${CONFIG_BESTAND} from the current folder, or from --site
 Options for deploy:
   --email <address>  needed for the first publication
   --slug <name>      the subdomain you want (otherwise we pick one)
+  --location <code>  where it runs, a code from https://dorelli.cloud/api/locations
+                     such as azure:westeurope (otherwise Dorelli chooses, in the EU)
   --yes              never ask anything (for scripts and AI tools)
 
 The first publication writes ${CONFIG_BESTAND} with your site id and token.
@@ -91,7 +94,7 @@ async function deploy(argv) {
   process.stderr.write(bestaand ? "Publishing again…\n" : "Publishing…\n");
 
   try {
-    const r = await publiceerMap({ map, email, slug: opties.slug, api });
+    const r = await publiceerMap({ map, email, slug: opties.slug, location: opties.location, api });
 
     for (const o of r.overgeslagen.slice(0, 5)) {
       process.stderr.write(`  skipped (not static): ${o}\n`);
@@ -101,6 +104,7 @@ async function deploy(argv) {
     }
     process.stderr.write(`  ${r.bestanden} ${r.bestanden === 1 ? "file" : "files"} from ${path.relative(map, r.siteMap) || "."}\n`);
     for (const regel of plaatsRegels(r.plaats, r.warnings)) process.stderr.write(`  ${regel}\n`);
+    for (const regel of locatieRegels(r)) process.stderr.write(`  ${regel}\n`);
     if (r.nieuw) {
       process.stderr.write(`  ${CONFIG_BESTAND} created: keep it, do not commit it\n`);
       process.stderr.write(`  management link sent to ${email}\n`);

@@ -46,7 +46,10 @@ npx github:dorelli-cloud/cli mcp               # run as an MCP server
 ```
 
 Options for `deploy`: `--email`, `--slug`, `--yes` (never ask anything, for
-scripts and AI tools).
+scripts and AI tools), and `--location <code>`: where the site runs, a code
+from https://dorelli.cloud/api/locations such as `azure:westeurope`. Without
+it Dorelli chooses, in the EU. The location counts for the first publication;
+a site moves later under Location in the portal. Since version 0.5.0.
 
 `put` and `rm` change a few files without the rest of the site on your
 computer, for example a new photo: `put photo.jpg --dir images`. Each command

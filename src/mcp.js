@@ -18,7 +18,7 @@
 
 import path from "path";
 import { createRequire } from "module";
-import { STANDAARD_API, haalStatus, leesConfig, plaatsRegels, publiceerMap } from "./deploy.js";
+import { STANDAARD_API, haalStatus, leesConfig, locatieRegels, plaatsRegels, publiceerMap } from "./deploy.js";
 
 /** The stateless revision: every request carries its own version and capabilities. */
 const PROTOCOL_MODERN = "2026-07-28";
@@ -52,6 +52,11 @@ const TOOLS = [
         slug: {
           type: "string",
           description: "The subdomain you want, for example 'bakery-jansen'. Optional.",
+        },
+        location: {
+          type: "string",
+          description:
+            "Where the site runs: a code from https://dorelli.cloud/api/locations, such as 'azure:westeurope'. Only for the first publication. Optional; without it Dorelli chooses, in the EU.",
         },
       },
       required: ["directory"],
@@ -102,6 +107,7 @@ async function roepTool(naam, args) {
       map,
       email: args?.email,
       slug: args?.slug,
+      location: args?.location,
       api: STANDAARD_API,
       bron: "cli",
     });
@@ -115,6 +121,7 @@ async function roepTool(naam, args) {
       regels.push(`Skipped (not static): ${r.overgeslagen.slice(0, 5).join(", ")}${r.overgeslagen.length > 5 ? " …" : ""}`);
     }
     regels.push(...plaatsRegels(r.plaats, r.warnings));
+    regels.push(...locatieRegels(r));
     return tekst(regels.join("\n"));
   }
 

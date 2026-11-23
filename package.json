@@ -1,6 +1,6 @@
 {
   "name": "dorelli",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Put your static website online on Dorelli Cloud, from your terminal or from an AI tool such as Claude Code, Codex or Cursor.",
   "keywords": [
     "hosting",
